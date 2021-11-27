@@ -1,0 +1,3 @@
+[submodule "MiB_api-gateway"]
+	path = MiB_api-gateway
+	url = https://github.com/Spartan-F117/MiB_api-gateway
