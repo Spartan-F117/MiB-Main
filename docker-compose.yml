@@ -129,6 +129,105 @@ services:
   # separating services by: db_service, migration_service, worker_service
   #
 
+  # -------------------------------------------- #
+  # Message Microservice                         #
+  # -------------------------------------------- #
+  message_ms_db:
+    #
+    # Message Microservice Database
+    #
+    image: library/postgres:10
+    restart: on-failure
+    env_file:
+      - message_ms.conf
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  message_ms_migrations:
+    #
+    # Message Microservice Migrations
+    #
+    build: ./MiB-MessageMicroservice
+    env_file:
+      - message_ms.conf
+    environment:
+      - POSTGRES_HOST=message_ms_db
+    restart: on-failure
+    command: flask db upgrade
+    depends_on:
+      message_ms_db:
+        condition: service_healthy
+
+  message_ms_worker:
+    #
+    # Message Microservice Worker node
+    #
+    build: ./MiB-MessageMicroservice
+    restart: on-failure
+    env_file:
+      - message_ms.conf
+    environment:
+      - POSTGRES_HOST=message_ms_db
+    depends_on:
+      message_ms_db:
+        condition: service_healthy
+      message_ms_migrations:
+        condition: service_started
+
+  # -------------------------------------------- #
+  # Lottery Microservice                         #
+  # -------------------------------------------- #
+  lottery_ms_db:
+    #
+    # Lottery Microservice Database
+    #
+    image: library/postgres:10
+    restart: on-failure
+    env_file:
+      - lottery_ms.conf
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lottery_ms_migrations:
+    #
+    # Lottery Microservice Migrations
+    #
+    build: ./MiB_LotteryMicroservice
+    env_file:
+      - lottery_ms.conf
+    environment:
+      - POSTGRES_HOST=lottery_ms_db
+    restart: on-failure
+    command: flask db upgrade
+    depends_on:
+      lottery_ms_db:
+        condition: service_healthy
+
+  lottery_ms_worker:
+    #
+    # Lottery Microservice Worker node
+    #
+    build: ./MiB_LotteryMicroservice
+    #volumes:
+    #  - .:/app
+    restart: on-failure
+    env_file:
+      - lottery_ms.conf
+    environment:
+      - POSTGRES_HOST=lottery_ms_db
+    depends_on:
+      lottery_ms_db:
+        condition: service_healthy
+      lottery_ms_migrations:
+        condition: service_started
+
+
 volumes:
   # -------------------------------------------- #
   # Volumes                                      #
