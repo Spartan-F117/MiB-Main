@@ -55,8 +55,6 @@ services:
     #
     restart: always
     build: ./MiB_api-gateway
-    #volumes:
-    #  - .:/app
     env_file:
       - gateway.conf
     environment:
@@ -69,10 +67,22 @@ services:
   # -------------------------------------------- #
   # Common Services                              #
   # -------------------------------------------- #
-  #
-  # specify here the common services between your
-  # microservices
-  #
+
+  redis_lottery:
+    container_name: redis_lottery
+    image: redis:alpine
+    hostname: redis
+    ports:
+      - "6379:6379"
+
+  redis_message:
+    container_name: redis_message
+    image: redis:alpine
+    hostname: redis
+    command: --port 6380
+    ports:
+      - "6380:6380"
+      
   # -------------------------------------------- #
   # Users Microservice                           #
   # -------------------------------------------- #
@@ -80,7 +90,7 @@ services:
     #
     # Users Microservice Database
     #
-    image: library/postgres:10
+    image: library/postgres:14
     restart: on-failure
     env_file:
       - users_ms.conf
@@ -104,7 +114,6 @@ services:
     depends_on:
       users_ms_db:
         condition: service_healthy
-
   users_ms_worker:
     #
     # Users Microservice Worker node
@@ -122,11 +131,6 @@ services:
         condition: service_healthy
       users_ms_migrations:
         condition: service_started
-  
-  #
-  # Specify here your microservices
-  # separating services by: db_service, migration_service, worker_service
-  #
   # -------------------------------------------- #
   # Lottery Microservice                         #
   # -------------------------------------------- #
@@ -134,7 +138,7 @@ services:
     #
     # Lottery Microservice Database
     #
-    image: library/postgres:10
+    image: library/postgres:14
     restart: on-failure
     env_file:
       - lottery_ms.conf
@@ -174,6 +178,30 @@ services:
         condition: service_healthy
       lottery_ms_migrations:
         condition: service_started
+        
+  celery_worker_lottery:
+    build:
+      context: ./MiB_LotteryMicroservice
+    hostname: worker
+    entrypoint: celery
+    command: -b "redis://redis:6379" -A wsgi.celery_app worker --loglevel=info
+    env_file:
+      - lottery_ms.conf
+    environment:
+      - USERS_MS_HOST=users_ms_worker
+      - POSTGRES_HOST=lottery_ms_db    
+    links:
+      - redis_lottery
+      - lottery_ms_db
+    depends_on:
+      - redis_lottery
+      - lottery_ms_db
+  celery_beat_lottery:
+    build:
+      context: ./MiB_LotteryMicroservice
+    command: celery -b "redis://redis:6379" -A wsgi.celery_app beat --loglevel=info
+    depends_on:
+      - redis_lottery
 
   # -------------------------------------------- #
   # Message Microservice                         #
@@ -182,7 +210,7 @@ services:
     #
     # Message Microservice Database
     #
-    image: library/postgres:10
+    image: library/postgres:14
     restart: on-failure
     env_file:
       - message_ms.conf
@@ -222,6 +250,31 @@ services:
         condition: service_healthy
       message_ms_migrations:
         condition: service_started
+        
+  celery_worker_message:
+    build:
+      context: ./MiB-MessageMicroservice
+    hostname: worker
+    entrypoint: celery
+    command: -b "redis://redis:6380" -A wsgi.celery_app worker --loglevel=info
+    env_file:
+      - message_ms.conf
+    environment:
+      - USERS_MS_HOST=users_ms_worker
+      - POSTGRES_HOST=message_ms_db    
+    links:
+      - redis_message
+      - message_ms_db
+    depends_on:
+      - redis_message
+      - message_ms_db
+
+  celery_beat_message:
+    build:
+      context: ./MiB-MessageMicroservice
+    command: celery -b "redis://redis:6380" -A wsgi.celery_app beat --loglevel=info
+    depends_on:
+      - redis_message
 
 volumes:
   # -------------------------------------------- #
