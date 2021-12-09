@@ -4,3 +4,9 @@
 [submodule "MiB_UserMicroservice"]
 	path = MiB_UserMicroservice
 	url = https://github.com/Spartan-F117/MiB_UserMicroservice
+[submodule "MiB-MessageMicroservice"]
+	path = MiB-MessageMicroservice
+	url = https://github.com/Spartan-F117/MiB-MessageMicroservice
+[submodule "MiB_LotteryMicroservice"]
+	path = MiB_LotteryMicroservice
+	url = https://github.com/Spartan-F117/MiB_LotteryMicroservice
