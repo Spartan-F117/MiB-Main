@@ -45,10 +45,10 @@ University of Pisa.
     ├─ message_ms.conf
 
 
-### Application Architecture:
-    
+### ARCHITECTURE APPLICATION:
+![image description](images/architecture.png)
 
-### Useful Developer Commands:
+### USEFUL DEVELOPERS COMMAND:
 
     TO ADD SUBMODULES:
         - clone MiB-Main
