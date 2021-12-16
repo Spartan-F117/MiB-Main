@@ -19,7 +19,7 @@ University of Pisa.
 
 
 ## Instructions
-    This are the instructions to run the project.
+    These are the instructions to run the project.
     IMPORTANT: for test reason the LOTTERY POINT NECESSARY TO DELETE A MESSAGE is 0.
                You can change this parameter in the first line of API-gateway (mib/views/users.py)
 
